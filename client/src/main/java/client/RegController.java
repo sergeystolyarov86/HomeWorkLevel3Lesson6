@@ -30,7 +30,7 @@ public class RegController {
     public void showResult(String result) {
         if (result.equals("/reg_ok")) {
             textArea.appendText("Регистрация прошла успешно\n");
-        } else textArea.appendText("Регистрация не удалась\n.");
+        } else textArea.appendText("Регистрация не удалась\n");
     }
 
     public void setController(Controller controller) {

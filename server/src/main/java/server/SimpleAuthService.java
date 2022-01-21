@@ -1,47 +1,102 @@
 package server;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.*;
+
 
 public class SimpleAuthService implements AuthService {
 
+    private static Connection connection;
+    private static Statement statement;
+
+    public SimpleAuthService() {
+        try {
+            connect();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public String getNicknameByLoginAndPassword(String login, String password) {
-        for (UserData user : users) {
-            if (user.login.equals(login) && user.password.equals(password)) return user.nickname;
+        String nickName = null;
+        try (
+                PreparedStatement preparedStatement =
+                        connection.prepareStatement(
+                                "SELECT nickName FROM DataChat WHERE login=? and DataChat.password=?")) {
+            preparedStatement.setString(1, login);
+            preparedStatement.setString(2, password);
+            nickName = preparedStatement.executeQuery().getString("nickName");
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-        return null;
+        return nickName;
     }
 
     @Override
     public boolean registration(String login, String password, String nickname) {
-        for (UserData user : users) {
-            if (user.login.equals(login) || user.nickname.equals(nickname)) {
-                return false;
+
+        try (
+                PreparedStatement preparedStatement = connection.prepareStatement
+                        (" select login, password, nickName from DataChat ")) {
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) {
+                if (resultSet.getString("login").equals(login) ||
+                        resultSet.getString("nickName").equals(nickname)) {
+                    return false;
+                }
             }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
-        users.add(new UserData(login, password, nickname));
+        try (
+                PreparedStatement preparedStatement =
+                        connection.prepareStatement(
+                                "INSERT INTO DataChat (login, password, nickName) VALUES (?,?,?)")) {
+            preparedStatement.setString(1, login);
+            preparedStatement.setString(2, password);
+            preparedStatement.setString(3, nickname);
+            preparedStatement.addBatch();
+            preparedStatement.executeBatch();
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
         return true;
     }
 
-    private class UserData {
-        String login;
-        String password;
-        String nickname;
-
-        public UserData(String login, String password, String nickname) {
-            this.login = login;
-            this.password = password;
-            this.nickname = nickname;
+    public static void changeNick(String nickName,String newNickName){
+        try(PreparedStatement preparedStatement = connection.prepareStatement(
+                "UPDATE DataChat SET nickName=? WHERE nickName=?;")){
+            preparedStatement.setString(1,newNickName);
+            preparedStatement.setString(2,nickName);
+            preparedStatement.addBatch();
+            preparedStatement.executeBatch();
+        }catch (SQLException ex){
+            ex.printStackTrace();
         }
     }
 
-    private List<UserData> users;
 
-    public SimpleAuthService() {
-        users = new ArrayList<>();
-        users.add(new UserData("qwe", "qwe", "qwe"));
-        users.add(new UserData("asd", "asd", "asd"));
-        users.add(new UserData("zxc", "zxc", "zxc"));
+    public static void connect() throws SQLException {
+        connection = DriverManager.getConnection("jdbc:sqlite:datadb.db");
+        statement = connection.createStatement();
+    }
+
+    public void disconnect() {
+        if (statement != null) {
+            try {
+                statement.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        if (connection != null) {
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

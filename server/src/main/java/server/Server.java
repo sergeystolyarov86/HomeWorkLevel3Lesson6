@@ -13,7 +13,7 @@ public class Server {
 
     private static final int PORT = 8189;
     private List<ClientHandler> clients;
-    private AuthService authService;
+    private SimpleAuthService authService;
 
     public Server() {
         clients = new CopyOnWriteArrayList<>();
@@ -40,7 +40,9 @@ public class Server {
             }
             try {
                 System.out.println("Server close");
+                authService.disconnect();
                 server.close();
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -79,6 +81,7 @@ public class Server {
     public AuthService getAuthService() {
         return authService;
     }
+
     public boolean isLoginAuthenticated(String login){
         for (ClientHandler client : clients) {
             if(client.getLogin().equals(login)){
@@ -95,6 +98,12 @@ public class Server {
         String msg = sb.toString();
         for (ClientHandler client : clients) {
             client.sendMsg(msg);
+        }
+    }
+    public void changeClientNickName(String nickName,String newNickName){
+        for (ClientHandler client : clients) {
+            if(client.getNickname().equals(nickName)) client.setNickname(newNickName);
+            broadcastClientList();
         }
     }
 }

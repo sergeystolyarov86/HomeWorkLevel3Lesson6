@@ -184,14 +184,15 @@ public class Controller implements Initializable {
         Platform.runLater(() -> {
             if (nickname.equals("")) {
                 stage.setTitle("ChatGB");
-            } else stage.setTitle(String.format("ChatGB: Welcome %s", nickname));
+            } else stage.setTitle(String.format("ChatGB: Добро пожаловать %s", nickname));
         });
     }
 
     @FXML
     public void clickClientList(MouseEvent mouseEvent) {
         String receiver = clientList.getSelectionModel().getSelectedItem();
-        textField.setText("/w " + receiver + " ");
+        if(receiver.equals(nickname)) {textField.setText("/newNick ");}
+        else textField.setText("/w " + receiver + " ");
     }
 
      private void createRegWindow(){
