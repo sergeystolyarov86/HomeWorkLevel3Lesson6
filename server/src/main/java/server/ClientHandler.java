@@ -31,6 +31,7 @@ public class ClientHandler {
 
                         if (str.equals("/end")) {
                             out.writeUTF("/end");
+
                             throw new RuntimeException("Клиент решил отключиться");
                         }
                         // Auth
@@ -39,6 +40,7 @@ public class ClientHandler {
                             if (token.length < 3) {
                                 continue;
                             }
+
 
                             String newNick = server
                                     .getAuthService()
@@ -69,6 +71,7 @@ public class ClientHandler {
                                 continue;
                             }
                             boolean b = server.getAuthService().registration(token[1], token[2], token[3]);
+
                             if (b) {
                                 sendMsg("/reg_ok");
                             } else {
@@ -82,9 +85,17 @@ public class ClientHandler {
 
                         if (str.equals("/end")) {
                             out.writeUTF("/end");
+
                             break;
-                        } else if (str.startsWith("/w")) {
-                            String[] token = str.split(" ", 3);
+                        }else if(str.startsWith("/newNick")){
+                            String[] token = str.split("\\s+");
+                            SimpleAuthService.changeNick(this.nickname,token[1]);
+                            server.changeClientNickName(this.nickname,token[1]);
+
+
+                        }
+                        else if (str.startsWith("/w")) {
+                            String[] token = str.split("\\s+", 3);
                             server.privateMsg(this, token[1], this.nickname + ": " + token[2]);
                         } else server.broadcastMsg(this, str);
                     }
@@ -103,6 +114,7 @@ public class ClientHandler {
                     System.out.println("Client: " + socket.getLocalSocketAddress() + " disconnect ");
                     try {
                         socket.close();
+
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -123,6 +135,10 @@ public class ClientHandler {
 
     public String getNickname() {
         return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
     }
 
     public String getLogin() {

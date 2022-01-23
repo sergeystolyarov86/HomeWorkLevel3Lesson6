@@ -16,7 +16,7 @@
         <TextField fx:id="loginField"  promptText="login"/>
         <PasswordField fx:id="passwordField"  promptText="password"/>
         <TextField fx:id="nickField" HBox.hgrow="ALWAYS" promptText="nickname"/>
-        <TextArea fx:id="textArea" VBox.vgrow="ALWAYS"/>
+        <TextArea fx:id="textArea" VBox.vgrow="ALWAYS" editable="false"/>
         <Button text="registration"  minWidth="100" onAction="#tryToReg"/>
 
 </VBox>
