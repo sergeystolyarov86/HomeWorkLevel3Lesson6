@@ -2,7 +2,6 @@ package client;
 
 
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -12,20 +11,22 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class Controller implements Initializable {
+
+
     @FXML
     public TextArea textArea;
     @FXML
@@ -41,6 +42,7 @@ public class Controller implements Initializable {
     @FXML
     public ListView<String> clientList;
 
+
     private Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
@@ -54,6 +56,8 @@ public class Controller implements Initializable {
     private Stage stage;
     private Stage regStage;
     private RegController regcontroller;
+    private FileWriter fileWriter;
+    private FileReader fileReader;
 
     public void setAuthenticated(boolean authenticated) {
         this.authenticated = authenticated;
@@ -79,6 +83,8 @@ public class Controller implements Initializable {
                 if (socket != null && !socket.isClosed()) {
                     try {
                         out.writeUTF("/end");
+                        fileWriter.close();
+                        fileReader.close();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -95,7 +101,7 @@ public class Controller implements Initializable {
             out = new DataOutputStream(socket.getOutputStream());
 
             new Thread(() -> {
-                try {        //Auth
+                try {
                     while (true) {
                         String str = in.readUTF();
                         if (str.startsWith("/")) {
@@ -105,16 +111,19 @@ public class Controller implements Initializable {
                             if (str.startsWith("/auth_ok")) {
                                 nickname = str.split("\\s+")[1];
                                 setAuthenticated(true);
+                                createFileOfHistory(nickname);
+                                getHistoryMsg(nickname);
                                 break;
                             }
-                            if (str.startsWith("/reg_ok")){
+                            if (str.startsWith("/reg_ok")) {
                                 regcontroller.showResult("/reg_ok");
                             }
-                            if (str.startsWith("/reg_no")){
+                            if (str.startsWith("/reg_no")) {
                                 regcontroller.showResult("/reg_no");
                             }
                         } else {
                             textArea.appendText(str + "\n");
+
                         }
                     }
                     while (authenticated) {
@@ -135,6 +144,8 @@ public class Controller implements Initializable {
                             }
                         } else {
                             textArea.appendText(str + "\n");
+                            saveMsg(textArea.getText(), nickname);
+
                         }
                     }
                 } catch (IOException e) {
@@ -167,7 +178,7 @@ public class Controller implements Initializable {
     }
 
     @FXML
-    public void tryToAuth(ActionEvent actionEvent) {
+    public void tryToAuth() {
         if (socket == null || socket.isClosed()) {
             connect();
         }
@@ -189,14 +200,15 @@ public class Controller implements Initializable {
     }
 
     @FXML
-    public void clickClientList(MouseEvent mouseEvent) {
+    public void clickClientList() {
         String receiver = clientList.getSelectionModel().getSelectedItem();
-        if(receiver.equals(nickname)) {textField.setText("/newNick ");}
-        else textField.setText("/w " + receiver + " ");
+        if (receiver.equals(nickname)) {
+            textField.setText("/newNick ");
+        } else textField.setText("/w " + receiver + " ");
     }
 
-     private void createRegWindow(){
-        try{
+    private void createRegWindow() {
+        try {
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/reg.fxml"));
             Parent root = fxmlLoader.load();
             regStage = new Stage();
@@ -212,23 +224,83 @@ public class Controller implements Initializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-     }
+    }
 
-    public void tryToReg(ActionEvent actionEvent) {
-        if(regStage == null){
+    public void tryToReg() {
+        if (regStage == null) {
             createRegWindow();
         }
         Platform.runLater(() -> regStage.show());
     }
-    public void registration(String login,String password,String nickname){
+
+    public void registration(String login, String password, String nickname) {
         if (socket == null || socket.isClosed()) {
             connect();
         }
-        String msg = String.format("/reg %s %s %s",login,password,nickname);
+        String msg = String.format("/reg %s %s %s", login, password, nickname);
         try {
             out.writeUTF(msg);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
+    private static void createFileOfHistory(String nickname) {
+        String dirName = "history";
+        File dir = new File("client/src/main/resources", dirName);
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+        String fileName = nickname + ".txt";
+        File file = new File(dir, fileName);
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void saveMsg(String msg, String nickname) {
+        String fileName = "client/src/main/resources/history/" + nickname + ".txt";
+
+        try {
+            fileWriter = new FileWriter(fileName);
+            fileWriter.write(msg + "\t");
+            fileWriter.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void getHistoryMsg(String nickname) {
+        String fileName = "client/src/main/resources/history/" + nickname + ".txt";
+        try {
+            fileReader = new FileReader(fileName);
+            BufferedReader reader = new BufferedReader(fileReader);
+            StringBuilder story = new StringBuilder();
+            while (reader.ready()){
+                 story.append(reader.readLine()).append("\t");
+            }
+            String str = story.toString();
+
+            String[] arrStr = str.split("\t");
+                List<String> list = new ArrayList<>(Arrays.asList(arrStr));
+                if (list.size() >= 100) {
+                    for (int i = list.size() - 100; i < list.size(); i++) {
+                        textArea.appendText(list.get(i) + "\n");
+                    }
+                } else {
+                    for (String s : list) {
+                        textArea.appendText(s + "\n");
+                    }
+                }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
+
+
+

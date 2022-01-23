@@ -18,6 +18,7 @@ public class Main extends Application {
         primaryStage.setScene(new Scene(root, 550, 450));
         InputStream iconStream =
                 getClass().getResourceAsStream("/image/icon.png");
+
         Image image = new Image(iconStream);
         primaryStage.getIcons().add(image);
         primaryStage.show();
