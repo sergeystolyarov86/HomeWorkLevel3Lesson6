@@ -1,6 +1,6 @@
 package client;
 
-import javafx.event.ActionEvent;
+
 import javafx.fxml.FXML;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
@@ -19,7 +19,7 @@ public class RegController {
 
 
     @FXML
-    public void tryToReg(ActionEvent actionEvent) {
+    public void tryToReg() {
         String login = loginField.getText().trim();
         String password = passwordField.getText().trim();
         String nickname = nickField.getText().trim();

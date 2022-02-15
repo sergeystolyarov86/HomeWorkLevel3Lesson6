@@ -11,9 +11,18 @@ public class SimpleAuthService implements AuthService {
     public SimpleAuthService() {
         try {
             connect();
+            createTable();
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void createTable() throws SQLException {
+        String sql = "create table if not exists DataChat (" + "id integer primary key autoincrement not null,"+
+                "login text not null,"+
+                "password text not null,"+"" +
+                "nickName"+");";
+        statement.executeUpdate(sql);
     }
 
     @Override
