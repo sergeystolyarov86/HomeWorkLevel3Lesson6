@@ -24,7 +24,6 @@ public class DataBase {
     public DataBase() {
         try {
             connect();
-            createTable();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -39,6 +38,7 @@ public class DataBase {
         connection = DriverManager.getConnection("jdbc:sqlite:datadb.db");
         statement = connection.createStatement();
         System.out.println("connected to db");
+        createTable();
         getLogPassNicknameStatement = connection.prepareStatement(GET_LOG_PASS_NICKNAME);
         regInsertStatement = connection.prepareStatement(REG_INSERT);
         getNicknameStatement = connection.prepareStatement(GET_NICKNAME_BY_LOG_PASS);
