@@ -15,9 +15,10 @@ public class Server {
     private List<ClientHandler> clients;
     private SimpleAuthService authService;
 
+
     public Server() {
         clients = new CopyOnWriteArrayList<>();
-        authService= new SimpleAuthService();
+        authService = new SimpleAuthService();
 
         try {
             server = new ServerSocket(PORT);
@@ -40,8 +41,9 @@ public class Server {
             }
             try {
                 System.out.println("Server close");
-                authService.disconnect();
                 server.close();
+                authService.dataBase.disconnect();
+                System.out.println("db disconnect");
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -49,31 +51,33 @@ public class Server {
         }
     }
 
-    public void broadcastMsg(ClientHandler sender,String msg) {
-        String message = String.format("%s : %s",sender.getNickname(),msg);
+    public void broadcastMsg(ClientHandler sender, String msg) {
+        String message = String.format("%s : %s", sender.getNickname(), msg);
         for (ClientHandler c : clients) {
             c.sendMsg(message);
         }
     }
-    public void privateMsg(ClientHandler sender,String nickName,String msg) {
+
+    public void privateMsg(ClientHandler sender, String nickName, String msg) {
         for (ClientHandler c : clients) {
             if (nickName.equals(c.getNickname())) {
-                 c.sendMsg("Сообщение от "+msg);
-                 if(sender.equals(c)){
-                     return;
-                 }
-                 sender.sendMsg(msg);
-                 return;
+                c.sendMsg("Сообщение от " + msg);
+                if (sender.equals(c)) {
+                    return;
+                }
+                sender.sendMsg(msg);
+                return;
             }
         }
-        sender.sendMsg("Полльзователь с ником: "+nickName+" не найден");
+        sender.sendMsg("Полльзователь с ником: " + nickName + " не найден");
     }
 
     public void subscribe(ClientHandler clientHandler) {
         clients.add(clientHandler);
         broadcastClientList();
     }
-        public void unsubscribe(ClientHandler clientHandler){
+
+    public void unsubscribe(ClientHandler clientHandler) {
         clients.remove(clientHandler);
         broadcastClientList();
     }
@@ -82,15 +86,16 @@ public class Server {
         return authService;
     }
 
-    public boolean isLoginAuthenticated(String login){
+    public boolean isLoginAuthenticated(String login) {
         for (ClientHandler client : clients) {
-            if(client.getLogin().equals(login)){
+            if (client.getLogin().equals(login)) {
                 return true;
             }
         }
         return false;
     }
-    public void broadcastClientList(){
+
+    public void broadcastClientList() {
         StringBuilder sb = new StringBuilder("/clientList");
         for (ClientHandler client : clients) {
             sb.append(" ").append(client.getNickname());
@@ -100,9 +105,10 @@ public class Server {
             client.sendMsg(msg);
         }
     }
-    public void changeClientNickName(String nickName,String newNickName){
+
+    public void changeClientNickName(String nickName, String newNickName) {
         for (ClientHandler client : clients) {
-            if(client.getNickname().equals(nickName)) client.setNickname(newNickName);
+            if (client.getNickname().equals(nickName)) client.setNickname(newNickName);
             broadcastClientList();
         }
     }

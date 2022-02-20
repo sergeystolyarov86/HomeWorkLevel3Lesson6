@@ -56,8 +56,7 @@ public class Controller implements Initializable {
     private Stage stage;
     private Stage regStage;
     private RegController regcontroller;
-    private FileWriter fileWriter;
-    private FileReader fileReader;
+
 
     public void setAuthenticated(boolean authenticated) {
         this.authenticated = authenticated;
@@ -83,8 +82,7 @@ public class Controller implements Initializable {
                 if (socket != null && !socket.isClosed()) {
                     try {
                         out.writeUTF("/end");
-                        fileWriter.close();
-                        fileReader.close();
+
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -141,7 +139,13 @@ public class Controller implements Initializable {
                                         clientList.getItems().add(token[i]);
                                     }
                                 });
+
+                            } else if (str.startsWith("/newNick")) {
+
+                                String[] token = str.split("\\s");
+                                changeNick(token[1], this.nickname);
                             }
+
                         } else {
                             textArea.appendText(str + "\n");
                             saveMsg(textArea.getText(), nickname);
@@ -265,8 +269,8 @@ public class Controller implements Initializable {
     private void saveMsg(String msg, String nickname) {
         String fileName = "client/src/main/resources/history/" + nickname + ".txt";
 
-        try {
-            fileWriter = new FileWriter(fileName);
+        try (
+                FileWriter fileWriter = new FileWriter(fileName)) {
             fileWriter.write(msg + "\t");
             fileWriter.flush();
         } catch (IOException e) {
@@ -276,29 +280,35 @@ public class Controller implements Initializable {
 
     private void getHistoryMsg(String nickname) {
         String fileName = "client/src/main/resources/history/" + nickname + ".txt";
-        try {
-            fileReader = new FileReader(fileName);
+        try (
+                FileReader fileReader = new FileReader(fileName)) {
             BufferedReader reader = new BufferedReader(fileReader);
             StringBuilder story = new StringBuilder();
-            while (reader.ready()){
-                 story.append(reader.readLine()).append("\t");
+            while (reader.ready()) {
+                story.append(reader.readLine()).append("\t");
             }
             String str = story.toString();
 
             String[] arrStr = str.split("\t");
-                List<String> list = new ArrayList<>(Arrays.asList(arrStr));
-                if (list.size() >= 100) {
-                    for (int i = list.size() - 100; i < list.size(); i++) {
-                        textArea.appendText(list.get(i) + "\n");
-                    }
-                } else {
-                    for (String s : list) {
-                        textArea.appendText(s + "\n");
-                    }
+            List<String> list = new ArrayList<>(Arrays.asList(arrStr));
+            if (list.size() >= 100) {
+                for (int i = list.size() - 100; i < list.size(); i++) {
+                    textArea.appendText(list.get(i) + "\n");
                 }
+            } else {
+                for (String s : list) {
+                    textArea.appendText(s + "\n");
+                }
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void changeNick(String newNick, String nickname) {
+        File file = new File("client/src/main/resources/history/" + nickname + ".txt");
+        File newNickFile = new File("client/src/main/resources/history/" + newNick + ".txt");
+        file.renameTo(newNickFile);
     }
 }
 

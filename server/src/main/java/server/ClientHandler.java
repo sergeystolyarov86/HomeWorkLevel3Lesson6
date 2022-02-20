@@ -89,9 +89,9 @@ public class ClientHandler {
                             break;
                         }else if(str.startsWith("/newNick")){
                             String[] token = str.split("\\s+");
-                            SimpleAuthService.changeNick(this.nickname,token[1]);
+                            server.getAuthService().changeNick(this.nickname,token[1]);
                             server.changeClientNickName(this.nickname,token[1]);
-
+                            out.writeUTF("/newNick"+" "+token[1]);
 
                         }
                         else if (str.startsWith("/w")) {
