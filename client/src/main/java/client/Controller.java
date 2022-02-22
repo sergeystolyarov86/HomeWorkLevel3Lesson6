@@ -19,16 +19,14 @@ import javafx.stage.StageStyle;
 import java.io.*;
 import java.net.Socket;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+
 import java.util.ResourceBundle;
 
 public class Controller implements Initializable {
 
 
     @FXML
-    public TextArea textArea;
+    public  TextArea textArea;
     @FXML
     public TextField textField;
     @FXML
@@ -56,6 +54,7 @@ public class Controller implements Initializable {
     private Stage stage;
     private Stage regStage;
     private RegController regcontroller;
+    SaveStoryService saveStoryService = new SaveStoryService();
 
 
     public void setAuthenticated(boolean authenticated) {
@@ -109,8 +108,8 @@ public class Controller implements Initializable {
                             if (str.startsWith("/auth_ok")) {
                                 nickname = str.split("\\s+")[1];
                                 setAuthenticated(true);
-                                createFileOfHistory(nickname);
-                                getHistoryMsg(nickname);
+                                saveStoryService.createFileOfHistory(nickname);
+                                textArea.appendText(saveStoryService.getHistoryMsg(nickname));
                                 break;
                             }
                             if (str.startsWith("/reg_ok")) {
@@ -148,7 +147,7 @@ public class Controller implements Initializable {
 
                         } else {
                             textArea.appendText(str + "\n");
-                            saveMsg(textArea.getText(), nickname);
+                            saveStoryService.saveMsg(textArea.getText(), nickname);
 
                         }
                     }
@@ -170,6 +169,7 @@ public class Controller implements Initializable {
         }
     }
 
+
     @FXML
     public void sendMsg() {
         try {
@@ -180,6 +180,7 @@ public class Controller implements Initializable {
             e.printStackTrace();
         }
     }
+
 
     @FXML
     public void tryToAuth() {
@@ -249,61 +250,7 @@ public class Controller implements Initializable {
         }
     }
 
-    private static void createFileOfHistory(String nickname) {
-        String dirName = "history";
-        File dir = new File("client/src/main/resources", dirName);
-        if (!dir.exists()) {
-            dir.mkdir();
-        }
-        String fileName = nickname + ".txt";
-        File file = new File(dir, fileName);
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 
-    private void saveMsg(String msg, String nickname) {
-        String fileName = "client/src/main/resources/history/" + nickname + ".txt";
-
-        try (
-                FileWriter fileWriter = new FileWriter(fileName)) {
-            fileWriter.write(msg + "\t");
-            fileWriter.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void getHistoryMsg(String nickname) {
-        String fileName = "client/src/main/resources/history/" + nickname + ".txt";
-        try (
-                FileReader fileReader = new FileReader(fileName)) {
-            BufferedReader reader = new BufferedReader(fileReader);
-            StringBuilder story = new StringBuilder();
-            while (reader.ready()) {
-                story.append(reader.readLine()).append("\t");
-            }
-            String str = story.toString();
-
-            String[] arrStr = str.split("\t");
-            List<String> list = new ArrayList<>(Arrays.asList(arrStr));
-            if (list.size() >= 100) {
-                for (int i = list.size() - 100; i < list.size(); i++) {
-                    textArea.appendText(list.get(i) + "\n");
-                }
-            } else {
-                for (String s : list) {
-                    textArea.appendText(s + "\n");
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     private void changeNick(String newNick, String nickname) {
         File file = new File("client/src/main/resources/history/" + nickname + ".txt");
