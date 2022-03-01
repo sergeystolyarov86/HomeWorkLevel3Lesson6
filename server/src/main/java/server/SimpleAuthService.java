@@ -1,15 +1,18 @@
 package server;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.sql.*;
 
 
 public class SimpleAuthService implements AuthService {
+    private static final Logger LOGGER = LogManager.getLogger();
+    DataBase dataBase;
 
-   DataBase dataBase ;
-
-   SimpleAuthService(){
-       dataBase = new DataBase();
-   }
+    SimpleAuthService() {
+        dataBase = new DataBase();
+    }
 
     @Override
     public String getNicknameByLoginAndPassword(String login, String password) {
@@ -19,7 +22,7 @@ public class SimpleAuthService implements AuthService {
             DataBase.getNicknameStatement.setString(2, password);
             nickName = DataBase.getNicknameStatement.executeQuery().getString("nickName");
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.throwing(e);
         }
         return nickName;
     }
@@ -37,7 +40,7 @@ public class SimpleAuthService implements AuthService {
                 }
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            LOGGER.throwing(ex);
         }
         try {
             DataBase.regInsertStatement.setString(1, login);
@@ -47,7 +50,7 @@ public class SimpleAuthService implements AuthService {
             DataBase.regInsertStatement.executeBatch();
 
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            LOGGER.throwing(ex);
         }
         return true;
     }
@@ -60,7 +63,7 @@ public class SimpleAuthService implements AuthService {
             DataBase.changeNickStatement.addBatch();
             DataBase.changeNickStatement.executeBatch();
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            LOGGER.throwing(ex);
         }
     }
 }

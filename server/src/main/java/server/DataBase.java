@@ -1,8 +1,12 @@
 package server;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.sql.*;
 
 public class DataBase {
+    private static final Logger LOGGER = LogManager.getLogger(Server.class);
     private static Connection connection;
     private static Statement statement;
     private static final String GET_NICKNAME_BY_LOG_PASS =
@@ -25,7 +29,7 @@ public class DataBase {
         try {
             connect();
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.throwing(e);
         }
     }
 
@@ -37,7 +41,7 @@ public class DataBase {
     public static void connect() throws SQLException {
         connection = DriverManager.getConnection("jdbc:sqlite:datadb.db");
         statement = connection.createStatement();
-        System.out.println("connected to db");
+        LOGGER.info("connected to db");
         createTable();
         getLogPassNicknameStatement = connection.prepareStatement(GET_LOG_PASS_NICKNAME);
         regInsertStatement = connection.prepareStatement(REG_INSERT);
@@ -56,7 +60,7 @@ public class DataBase {
             if (statement != null) statement.close();
             if (connection != null) connection.close();
         } catch (SQLException e) {
-            e.printStackTrace();
+           LOGGER.throwing(e);
         }
     }
 }

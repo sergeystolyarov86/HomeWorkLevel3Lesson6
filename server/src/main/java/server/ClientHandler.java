@@ -1,12 +1,13 @@
 package server;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 
 public class ClientHandler {
@@ -16,7 +17,8 @@ public class ClientHandler {
     private DataOutputStream out;
     private String nickname;
     private String login;
-    private static ExecutorService executorService = Executors.newCachedThreadPool();
+    private static final Logger LOGGER = LogManager.getLogger();
+
 
 
     public ClientHandler(Server server, Socket socket) {
@@ -25,7 +27,7 @@ public class ClientHandler {
             this.socket = socket;
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
-            executorService.execute(() -> {
+           Server.executorService.execute(() -> {
                 try {
                     socket.setSoTimeout(120000);
                     while (true) {
@@ -34,7 +36,9 @@ public class ClientHandler {
                         if (str.equals("/end")) {
                             out.writeUTF("/end");
 
+                            LOGGER.info("Клиент  решил отключиться");
                             throw new RuntimeException("Клиент решил отключиться");
+
                         }
                         // Auth
                         if (str.startsWith("/auth")) {
@@ -53,9 +57,12 @@ public class ClientHandler {
                                     nickname = newNick;
                                     sendMsg("/auth_ok " + nickname);
                                     server.subscribe(this);
-                                    System.out.println("Client authenticated.\n" +
+                                    LOGGER.info("Client authenticated.\n" +
                                             "Nick: " + nickname + "\n" +
                                             "Address: " + socket.getLocalSocketAddress());
+//                                    System.out.println("Client authenticated.\n" +
+//                                            "Nick: " + nickname + "\n" +
+//                                            "Address: " + socket.getLocalSocketAddress());
                                     socket.setSoTimeout(0);
                                     break;
                                 } else {
@@ -76,6 +83,8 @@ public class ClientHandler {
 
                             if (b) {
                                 sendMsg("/reg_ok");
+                                LOGGER.info(String.format
+                                        ("Зарегистрирован новый пользователь c  ником %s",token[3]));
                             } else {
                                 sendMsg("/reg_no");
                             }
@@ -90,11 +99,13 @@ public class ClientHandler {
 
                             break;
                         }else if(str.startsWith("/newNick")){
+                            String name = this.nickname;
                             String[] token = str.split("\\s+");
-                            server.getAuthService().changeNick(this.nickname,token[1]);
                             server.changeClientNickName(this.nickname,token[1]);
                             out.writeUTF("/newNick"+" "+token[1]);
-
+                            server.getAuthService().changeNick(this.nickname,token[1]);
+                            LOGGER.info(String.format
+                                    ("Пользователь %s сменил ник на %s",name,token[1]));
                         }
                         else if (str.startsWith("/w")) {
                             String[] token = str.split("\\s+", 3);
@@ -105,26 +116,26 @@ public class ClientHandler {
                     try {
                         out.writeUTF("/end)");
                     } catch (IOException ex) {
-                        ex.printStackTrace();
+                        LOGGER.throwing(ex);
                     }
                 } catch (RuntimeException e) {
-                    System.out.println(e.getMessage());
+                    LOGGER.throwing(e);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    LOGGER.throwing(e);
                 } finally {
                     server.unsubscribe(this);
-                    System.out.println("Client: " + socket.getLocalSocketAddress() + " disconnect ");
+                    LOGGER.info("Client: " + socket.getLocalSocketAddress() + " disconnect ");
                     try {
                         socket.close();
 
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        LOGGER.throwing(e);
                     }
                 }
             });
 
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.throwing(e);
         }
     }
 
@@ -132,7 +143,7 @@ public class ClientHandler {
         try {
             out.writeUTF(msg);
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.throwing(e);
         }
     }
 

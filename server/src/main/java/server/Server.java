@@ -1,11 +1,16 @@
 package server;
 
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Server {
     private static ServerSocket server;
@@ -14,39 +19,46 @@ public class Server {
     private static final int PORT = 8189;
     private List<ClientHandler> clients;
     private SimpleAuthService authService;
-
+    static ExecutorService executorService;
+    private static final Logger LOGGER_APP = LogManager.getLogger("root");
 
     public Server() {
         clients = new CopyOnWriteArrayList<>();
         authService = new SimpleAuthService();
+        executorService = Executors.newCachedThreadPool();
 
         try {
             server = new ServerSocket(PORT);
-            System.out.println("Server started");
+            LOGGER_APP.info("Server started");
 
             while (true) {
                 socket = server.accept();
-                System.out.println(socket.getLocalSocketAddress());
-                System.out.println("Client connect: " + socket.getRemoteSocketAddress());
+                // System.out.println(socket.getLocalSocketAddress());
+                LOGGER_APP.info(socket.getLocalSocketAddress());
+                //System.out.println("Client connect: " + socket.getRemoteSocketAddress());
+                LOGGER_APP.info("Client connect: " + socket.getRemoteSocketAddress());
                 new ClientHandler(this, socket);
+
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER_APP.throwing(e);
         } finally {
             try {
                 socket.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                LOGGER_APP.throwing(e);
             }
             try {
-                System.out.println("Server close");
+                // System.out.println("Server close");
+                LOGGER_APP.info("Server close");
                 server.close();
                 authService.dataBase.disconnect();
-                System.out.println("db disconnect");
+                LOGGER_APP.info("db disconnect");
+                executorService.shutdown();
 
             } catch (IOException e) {
-                e.printStackTrace();
+                LOGGER_APP.throwing(e);
             }
         }
     }
